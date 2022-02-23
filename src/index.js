@@ -2,43 +2,128 @@ import axios from 'axios';
 import cors from 'cors';
 import 'dotenv/config';
 import express from 'express';
+import * as MediaService from "./mediaService.js";
+import * as Utility from "./utility.js";
+import * as mockMediaQueryResponse from './media_query_response.json' assert {type: "json"};
+import * as mockUserInfoResponse from './user_info.json' assert {type: "json"};
 
 const PORT = process.env.PORT || 3000;
 const BASE_URL = 'https://www.instagram.com/';
 const CHROME_WIN_UA = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.87 Safari/537.36'
 const STORIES_UA = 'Instagram 123.0.0.21.114 (iPhone; CPU iPhone OS 11_4 like Mac OS X; en_US; en-US; scale=2.00; 750x1334) AppleWebKit/605.1.15'
-const MEDIA_QUERY_URL = `https://www.instagram.com/graphql/query/?query_hash=42323d64886122307be10013ad2dcc44&variables=`;
+const MEDIA_QUERY_URL = BASE_URL + `graphql/query/?query_hash=42323d64886122307be10013ad2dcc44&variables=`;
 const MEDIA_QUERY_VAR = `{"id":"{id}","first":{pagesize},"after":"{next}"}`;
+const USER_INFO_URL = BASE_URL + '{username}/?__a=1'
+const PAGE_SIZE = 50;
 
 const cache = {};
 const app = express();
 app.use(cors());
+app.use(express.json());
 
-app.get('/', (req, res) => {
-  fetchTimelineMedia().then(response => res.json(response.data));
+app.post('/auth-caching', (req, res) => {
+  if (req.query.strategy === 'clean-first') {
+    cache.igAuth = {};
+  }
+  var isValidCache = req.body && req.body.csrfToken && req.body.cookies && req.body.authUser && req.body.expires;
+  if (isValidCache && new Date() < new Date(req.body.expires)) {
+    cache.igAuth = req.body;
+    res.json(cache.igAuth);
+  } else {
+    _loadAndCacheIgAuth().then(igAuth => res.json(igAuth)).catch(error => {
+      console.error(`Unable to perform IG authentication. Try again later.`, error);
+      res.sendStatus(503);
+    });
+  } 
+});
+
+app.get('/users/:id', (req, res) => {
+  getTimelineMedia(req.params.id, req.query)
+    .then(response => res.json(response));
 });
 
 app.listen(PORT, () =>
   console.log(`Inscraper app listening on port ${PORT}!`),
 );
 
-async function fetchTimelineMedia() {
-  const igAuth = await _loadAndCacheIgAuth();
-  const mediaQueryVar = MEDIA_QUERY_VAR.replace('{id}', '49092777748').replace('{pagesize}', 50).replace('{next}', '');
-  return await axios.get(MEDIA_QUERY_URL + mediaQueryVar, {
+async function fetchUserInfo(igAuth, username) {
+  const userInfoUrl = USER_INFO_URL.replace('{username}', username);
+  const userInfoResponse = await axios.get(userInfoUrl, {
     headers: {
       'Referer': BASE_URL,
       'User-Agent': CHROME_WIN_UA,
       'X-CSRFToken': igAuth.csrfToken,
-      'Cookie': _buildCookieHeader(igAuth.cookies)
+      'Cookie': Utility._buildCookieHeader(igAuth.cookies)
     }
-  });
+  }); 
+  const user = userInfoResponse.data;
+  return {
+    id: user.graphql.user.id,
+    username: user.graphql.user.username,
+    name: user.graphql.user.full_name,
+    profile_pic: user.graphql.user.profile_pic_url_hd,
+    timeline_media_count: user.graphql.user.edge_owner_to_timeline_media.count,
+  };
+}
+
+async function getTimelineMedia(username, queryParams) {
+  const igAuth = await _loadAndCacheIgAuth();
+  const user = await fetchUserInfo(igAuth, username);
+  const desiredMediaCount = Utility._calculateDesiredMediaCount(user, queryParams);
+  const timelineMedias = await _fetchTimelineMedia(igAuth, user, desiredMediaCount);
+  return {
+    user: user,
+    timelineMediaDesiredCount: desiredMediaCount,
+    timelineMedias: timelineMedias
+  }
+}
+
+async function _fetchTimelineMedia(igAuth, user, desiredMediaCount) {
+  var medias = new Array();
+  var hasNext = true, next = '', fetchCount = 0;
+  while (hasNext && fetchCount < desiredMediaCount) {
+    var mediaQueryParams = MEDIA_QUERY_VAR.replace('{id}', user.id)
+      .replace('{pagesize}', PAGE_SIZE).replace('{next}', next);
+    var response = await axios.get(MEDIA_QUERY_URL + mediaQueryParams, {
+      headers: {
+        'Referer': BASE_URL,
+        'User-Agent': CHROME_WIN_UA,
+        'X-CSRFToken': igAuth.csrfToken,
+        'Cookie': Utility._buildCookieHeader(igAuth.cookies)
+      }
+    });
+
+    if (response.status !== 200) {
+      // Any request not success will return empty for all.
+      return [];
+    }
+
+    var timelineMedia = response.data.data.user.edge_owner_to_timeline_media;
+    var edges = timelineMedia.edges;
+    for(var i = 0; i < edges.length; i++) {
+      try {
+        var edgeMedias = await MediaService.buildMedia(igAuth, edges[i]);
+        medias.push(edgeMedias);
+        fetchCount++;
+        if (fetchCount >= desiredMediaCount) {
+          return medias;
+        }
+      } catch (error) {
+        // Any request not success will return empty for all.
+        console.error(`Build media fail for ${edges[i].node.shortcode}`, error);
+        return [];
+      }
+    }
+    hasNext = timelineMedia.page_info.has_next_page; 
+    next = timelineMedia.page_info.end_cursor;
+  }
+  return medias;
 }
 
 async function _loadAndCacheIgAuth() {
   var isIgAuthCached = cache.igAuth && cache.igAuth.csrfToken && cache.igAuth.cookies && cache.igAuth.authUser && cache.igAuth.expires;
   if (!isIgAuthCached || new Date() > new Date(cache.igAuth.expires)) {
-    const loginResponse = await authenticate();
+    const loginResponse = await _authenticate();
     cache.igAuth = {};
     cache.igAuth.csrfToken = loginResponse.csrfToken;
     cache.igAuth.cookies = loginResponse.cookies;
@@ -58,8 +143,8 @@ async function _loadAndCacheIgAuth() {
   return cache.igAuth;
 }
 
-async function authenticate() {
-  const tokenResponse = await fetchCsrfToken();
+async function _authenticate() {
+  const tokenResponse = await _fetchCsrfToken();
   const authenticateResponse = await axios.post('https://www.instagram.com/accounts/login/ajax/', _buildAuthenticateParams(), {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -67,13 +152,13 @@ async function authenticate() {
       'Referer': BASE_URL,
       'User-Agent': STORIES_UA,
       'X-CSRFToken': tokenResponse.csrfToken.value,
-      'Cookie': _buildCookieHeader(tokenResponse.cookies)
+      'Cookie': Utility._buildCookieHeader(tokenResponse.cookies)
     }    
   });
   if (authenticateResponse.status == 200) {
     if (true === authenticateResponse.data.authenticated) {
-      const cookiesEntries = _retrieveCookieEntries(authenticateResponse.headers['set-cookie']);
-      const csrfToken = _getCookieEntryByName(cookiesEntries, 'csrftoken');
+      const cookiesEntries = Utility._retrieveCookieEntries(authenticateResponse.headers['set-cookie']);
+      const csrfToken = Utility._getCookieEntryByName(cookiesEntries, 'csrftoken');
       return {
         cookies: cookiesEntries,
         csrfToken: csrfToken,
@@ -84,7 +169,7 @@ async function authenticate() {
   throw new Error('Error when authenticating to Instagram');
 }
 
-async function fetchCsrfToken() {
+async function _fetchCsrfToken() {
   const fetchCookieResponse = await axios.get(BASE_URL, {
     headers: {
       'Referer': BASE_URL,
@@ -92,8 +177,8 @@ async function fetchCsrfToken() {
     }
   });
   if (fetchCookieResponse.status === 200) {
-    const cookiesEntries = _retrieveCookieEntries(fetchCookieResponse.headers['set-cookie']);
-    const csrfToken = _getCookieEntryByName(cookiesEntries, 'csrftoken');
+    const cookiesEntries = Utility._retrieveCookieEntries(fetchCookieResponse.headers['set-cookie']);
+    const csrfToken = Utility._getCookieEntryByName(cookiesEntries, 'csrftoken');
     if (cookiesEntries.length > 0 && csrfToken) {
       return {
         cookies: cookiesEntries,
@@ -102,49 +187,6 @@ async function fetchCsrfToken() {
     }
   }
   throw new Error('Error when fetching CSRF token.');
-}
-
-function _buildCookieHeader(cookieEntries, includeEntries) {
-  var filterEntries = cookieEntries;
-  if (includeEntries && Array.isArray(includeEntries) && includeEntries.length > 0) {
-    filterEntries = cookieEntries.filter(item => includeEntries.includes(item.name))
-  }
-  return filterEntries.map(item => item.nameValuePair).join(';');
-}
-
-function _getCookieEntryByName(cookieEntries, cookieName) {
-  return cookieEntries.find(item => item.name === cookieName);
-}
-
-function _retrieveCookieEntries(cookieStrs) {
-  var result = [];
-  if (cookieStrs) {
-    if (Array.isArray(cookieStrs)) {
-      for(var i = 0; i < cookieStrs.length; i++) {
-        result.push(_buildCookieEntry(cookieStrs[i]));
-      }
-    } else {
-      result.push(_buildCookieEntry(cookieStrs));
-    }
-  }
-  return result;
-}
-
-function _buildCookieEntry(cookieStr) {
-  var cookieAttrs = cookieStr.split(';');
-  var entry = {
-    nameValuePair: cookieAttrs[0]
-  };
-  for (var j = 0; j < cookieAttrs.length; j++) {
-    var cookieAttrPairs = cookieAttrs[j].split('=');
-    if (j == 0) {
-      entry[`name`] = cookieAttrPairs[0];
-      entry[`value`] = cookieAttrPairs[1];
-    } else {
-      entry[`${cookieAttrPairs[0].trim()}`] = cookieAttrPairs[1];
-    }
-  }
-  return entry;
 }
 
 function _buildAuthenticateParams() {
@@ -158,3 +200,5 @@ function _buildAuthenticateParams() {
   params.append('trustedDeviceRecords', '');
   return params;
 }
+
+
