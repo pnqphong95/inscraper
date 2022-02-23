@@ -4,8 +4,6 @@ import 'dotenv/config';
 import express from 'express';
 import * as MediaService from "./mediaService.js";
 import * as Utility from "./utility.js";
-import * as mockMediaQueryResponse from './media_query_response.json' assert {type: "json"};
-import * as mockUserInfoResponse from './user_info.json' assert {type: "json"};
 
 const PORT = process.env.PORT || 3000;
 const BASE_URL = 'https://www.instagram.com/';
