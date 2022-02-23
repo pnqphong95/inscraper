@@ -44,16 +44,19 @@ function _buildCookieEntry(cookieStr) {
 export function _calculateDesiredMediaCount(user, queryParams) {
   var maximum = queryParams.maximum;
   var lastCount = queryParams.lastCount;
-  var expectMediaCount;
+
+  if (lastCount) {
+    if (lastCount < 0 || lastCount > user.timeline_media_count) {
+      return 0;
+    } else {
+      return user.timeline_media_count - lastCount;
+    }
+  }
+
   if (maximum && maximum > 0) {
-    expectMediaCount = maximum;
-  } else {
-    expectMediaCount = 0;
+    return maximum;
   }
-  if (!lastCount || lastCount < 0 || user.timeline_media_count <= lastCount) {
-    expectMediaCount = 0;
-  } else {
-    expectMediaCount = user.timeline_media_count - lastCount;
-  }
-  return expectMediaCount;
+
+  return user.timeline_media_count;
+
 }
