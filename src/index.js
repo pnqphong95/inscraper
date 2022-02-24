@@ -77,7 +77,7 @@ async function getTimelineMedia(username, queryParams) {
 }
 
 async function _fetchTimelineMedia(igAuth, user, desiredMediaCount) {
-  var medias = new Array();
+  var medias = [];
   var hasNext = true, next = '', fetchCount = 0;
   while (hasNext && fetchCount < desiredMediaCount) {
     var mediaQueryParams = MEDIA_QUERY_VAR.replace('{id}', user.id)
@@ -101,7 +101,7 @@ async function _fetchTimelineMedia(igAuth, user, desiredMediaCount) {
     for(var i = 0; i < edges.length; i++) {
       try {
         var edgeMedias = await MediaService.buildMedia(igAuth, edges[i]);
-        medias.concat(edgeMedias);
+        medias = medias.concat(edgeMedias);
         fetchCount++;
         if (fetchCount >= desiredMediaCount) {
           return medias;
