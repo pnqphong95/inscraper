@@ -101,7 +101,7 @@ async function _fetchTimelineMedia(igAuth, user, desiredMediaCount) {
     for(var i = 0; i < edges.length; i++) {
       try {
         var edgeMedias = await MediaService.buildMedia(igAuth, edges[i]);
-        medias.push(edgeMedias);
+        medias.concat(edgeMedias);
         fetchCount++;
         if (fetchCount >= desiredMediaCount) {
           return medias;
