@@ -1,4 +1,4 @@
-export function _buildCookieHeader(cookieEntries, includeEntries) {
+export function buildHeader(cookieEntries, includeEntries) {
   var filterEntries = cookieEntries;
   if (includeEntries && Array.isArray(includeEntries) && includeEntries.length > 0) {
     filterEntries = cookieEntries.filter(item => includeEntries.includes(item.name))
@@ -6,11 +6,11 @@ export function _buildCookieHeader(cookieEntries, includeEntries) {
   return filterEntries.map(item => item.nameValuePair).join(';');
 }
 
-export function _getCookieEntryByName(cookieEntries, cookieName) {
+export function getCookieByName(cookieEntries, cookieName) {
   return cookieEntries.find(item => item.name === cookieName);
 }
 
-export function _retrieveCookieEntries(cookieStrs) {
+export function retrieveCookieEntries(cookieStrs) {
   var result = [];
   if (cookieStrs) {
     if (Array.isArray(cookieStrs)) {
@@ -39,24 +39,4 @@ function _buildCookieEntry(cookieStr) {
     }
   }
   return entry;
-}
-
-export function _calculateDesiredMediaCount(user, queryParams) {
-  var maximum = queryParams.maximum;
-  var lastCount = queryParams.lastCount;
-
-  if (lastCount) {
-    if (lastCount < 0 || lastCount > user.timeline_media_count) {
-      return 0;
-    } else {
-      return user.timeline_media_count - lastCount;
-    }
-  }
-
-  if (maximum && maximum > 0) {
-    return maximum;
-  }
-
-  return user.timeline_media_count;
-
 }
