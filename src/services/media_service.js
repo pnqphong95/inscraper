@@ -10,7 +10,7 @@ export class MediaService {
   }
 
   async viewMedias(shortcodes, acceptTimeout) {
-    const result = { startTime: new Date(), data: [], remains: [] };
+    const result = { startTime: new Date(), data: {}, remains: [] };
     const headers = _genericHeaders(this.csrfToken, this.cookieStr);
     const viewMediaObjs = shortcodes.map(code => {
       return { code, url: Constant.VIEW_MEDIA_URL.replace('{code}', code) };
@@ -30,7 +30,10 @@ export class MediaService {
         var responses = await Promise.all(workingObjs.map(obj => axios.get(obj.url, { headers })));
         for(var i = 0; i < responses.length; i++) {
           if (responses[i].status === 200) {
-            result.data = result.data.concat(mediaView(responses[i].data))
+            const childMedias = mediaView(responses[i].data);
+            if (childMedias.length > 0) {
+              result.data[childMedias[0].origin] = childMedias;
+            }
           } else {
             result.remains.push(workingObjs[i].code);
           }
