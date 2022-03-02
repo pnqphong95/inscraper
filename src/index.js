@@ -35,9 +35,8 @@ app.post('/users/:username', async (req, res) => {
         .then(data => res.json({ user, new_media_count: newMediaCount, data }))
         .catch(error => res.status(error.status).json(error.json()));
     } catch (error) {
-      const status = error.status || 500;
-      const data = error.data || {};
-      res.status(status).json(data);
+      console.log(error.message);
+      res.status(error.status).json(error.json());
     }
   } else {
     res.sendStatus(400);
