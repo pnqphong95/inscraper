@@ -30,7 +30,7 @@ export class MediaService {
         var responses = await Promise.all(workingObjs.map(obj => axios.get(obj.url, { headers })));
         for(var i = 0; i < responses.length; i++) {
           if (responses[i].status === 200) {
-            result.data.push(mediaView(responses[i].data))
+            result.data.concat(mediaView(responses[i].data))
           } else {
             result.remains.push(workingObjs[i].code);
           }
