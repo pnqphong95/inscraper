@@ -28,11 +28,17 @@ app.post('/users/:username', async (req, res) => {
   const body = req.body;
   if (body && body.csrfToken && body.requestCookie) {
     const userService = new UserService(body.csrfToken, body.requestCookie);
-    const user = await userService.getUserInfomation(req.params.username);
-    const newMediaCount = MediaQueryHelper.calculateNewMediaCount(user.timeline_media_count, body.last_timeline_media_count);
-    userService.getMediasByDesiredCount(user.id, newMediaCount)
-      .then(data => res.json({ user, new_media_count: newMediaCount, data }))
-      .catch(error => res.status(error.status).json(error.json()));
+    try {
+      const user = await userService.getUserInfomation(req.params.username);
+      const newMediaCount = MediaQueryHelper.calculateNewMediaCount(user.timeline_media_count, body.last_timeline_media_count);
+      userService.getMediasByDesiredCount(user.id, newMediaCount)
+        .then(data => res.json({ user, new_media_count: newMediaCount, data }))
+        .catch(error => res.status(error.status).json(error.json()));
+    } catch (error) {
+      const status = error.status || 500;
+      const data = error.data || {};
+      res.status(status).json(data);
+    }
   } else {
     res.sendStatus(400);
   }
