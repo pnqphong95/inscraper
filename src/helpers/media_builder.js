@@ -18,7 +18,7 @@ export function mediaView(viewData) {
     if (carousel && carousel.length > 0) {
       for (var i = 0; i < carousel.length; i++) {
         result.push({
-          id: carousel[i].id, parent_id: media.pk, type: 'GraphSidecar', shortcode: media.code,
+          id: carousel[i].id, origin: media.pk, type: 'GraphSidecar', shortcode: media.code,
           taken_at_timestamp: media.taken_at,
           source: carousel[i].image_versions2.candidates[0].url,
           fulfilled_source: true
@@ -26,7 +26,7 @@ export function mediaView(viewData) {
       }
     } else if (video_versions && video_versions.length > 0) {
       result.push({
-        id: media.pk, type: 'GraphVideo', shortcode: media.code,
+        id: media.pk, origin: media.pk, type: 'GraphVideo', shortcode: media.code,
         taken_at_timestamp: media.taken_at,
         source: video_versions[0].url,
         fulfilled_source: true
