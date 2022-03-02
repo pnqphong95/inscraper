@@ -13,17 +13,23 @@ export class UserService {
   async getUserInfomation(username) {
     const userInfoUrl = Constant.USER_INFO_URL.replace('{username}', username);
     const headers = _genericHeaders(this.csrfToken, this.cookieStr);
-    const response = await axios.get(userInfoUrl, { headers });
-    if (response.status === 200) {
-      const graphql = response.data.graphql;
-      if (graphql && graphql.user) {
-        return {
-          id: graphql.user.id,
-          username: graphql.user.username,
-          name: graphql.user.full_name,
-          timeline_media_count: graphql.user.edge_owner_to_timeline_media.count,
-        };
+    try {
+      const response = await axios.get(userInfoUrl, { headers });
+      if (response.status === 200) {
+        const graphql = response.data.graphql;
+        if (graphql && graphql.user) {
+          return {
+            id: graphql.user.id,
+            username: graphql.user.username,
+            name: graphql.user.full_name,
+            timeline_media_count: graphql.user.edge_owner_to_timeline_media.count,
+          };
+        }
       }
+    } catch (error) {
+      console.log(error.response.data);
+      console.log(error.response.status);
+      console.log(error.response.headers);
     }
     throw new ApiError(`Error when get user information of ${username}`, 500);
   }
