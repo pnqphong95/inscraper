@@ -18,16 +18,18 @@ export function mediaView(viewData) {
     if (carousel && carousel.length > 0) {
       for (var i = 0; i < carousel.length; i++) {
         result.push({
-          id: media.pk, type: 'GraphSidecar', shortcode: media.code,
+          id: carousel[i].id, parent_id: media.pk, type: 'GraphSidecar', shortcode: media.code,
           taken_at_timestamp: media.taken_at,
-          source: carousel[i].image_versions2.candidates[0].url
+          source: carousel[i].image_versions2.candidates[0].url,
+          fulfilled_source: true
         });
       }
     } else if (video_versions && video_versions.length > 0) {
       result.push({
         id: media.pk, type: 'GraphVideo', shortcode: media.code,
         taken_at_timestamp: media.taken_at,
-        source: video_versions[0].url
+        source: video_versions[0].url,
+        fulfilled_source: true
       });
     }
   }
