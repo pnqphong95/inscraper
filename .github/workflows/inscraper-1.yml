@@ -1,9 +1,9 @@
-name: Deploy to inscraper-app
+name: Deploy to inscraper-1
 
 on:
   push:
     branches:
-      - master
+      - inscraper-1
 
 jobs:
   build:
@@ -13,7 +13,7 @@ jobs:
       - uses: akhileshns/heroku-deploy@v3.12.12
         with:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
-          heroku_app_name: ${{secrets.HEROKU_APP_NAME}}
+          heroku_app_name: ${{secrets.HEROKU_APP_NAME_2}}
           heroku_email: "phamphongbsn@outlook.com"
         env:
           HD_IG_USER: ${{secrets.IG_USER}}
