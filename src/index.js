@@ -30,6 +30,7 @@ app.post('/logout', async (req, res) => {
 
 app.post('/users/:username', async (req, res) => {
   const body = req.body;
+  console.log(JSON.stringify(req.body));
   if (body && body.csrfToken && body.requestCookie) {
     const userService = new UserService(body.csrfToken, body.requestCookie);
     const user = await userService.getUserInfomation(req.params.username);

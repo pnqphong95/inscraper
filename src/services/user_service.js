@@ -15,6 +15,7 @@ export class UserService {
     try {
       const headers = _genericHeaders(this.csrfToken, this.cookieStr);
       const response = await axios.get(userInfoUrl, { headers });
+      console.log(`Get user information from ${userInfoUrl}`);
       if (response.status === 200) {
         const graphql = response.data.graphql;
         if (graphql && graphql.user) {
@@ -42,6 +43,7 @@ export class UserService {
       const url = Constant.MEDIA_QUERY_URL + _mediaQueryParams(userId, next);
       try {
         const response = await axios.get(url, { headers });
+        console.log(`Get user medias from ${url}`);
         if (response.status !== 200) {
           console.log(`Status ${response.status} when get user medias from url: ${url}`);
           return [];
