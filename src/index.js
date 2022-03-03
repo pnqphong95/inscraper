@@ -32,15 +32,14 @@ app.post('/users/:username', async (req, res) => {
   const body = req.body;
   if (body && body.csrfToken && body.requestCookie) {
     const userService = new UserService(body.csrfToken, body.requestCookie);
-    try {
-      const user = await userService.getUserInfomation(req.params.username);
+    const user = await userService.getUserInfomation(req.params.username);
+    if (user.timeline_media_count && user.id) {
       const newMediaCount = MediaQueryHelper.calculateNewMediaCount(user.timeline_media_count, body.last_timeline_media_count);
       userService.getMediasByDesiredCount(user.id, newMediaCount)
         .then(data => res.json({ user, new_media_count: newMediaCount, data }))
         .catch(error => res.status(error.status).json(error.json()));
-    } catch (error) {
-      console.log(error);
-      res.sendStatus(500);
+    } else {
+      res.status(500).send('Unable to get user fron Instagram, please check log for details.');
     }
   } else {
     res.sendStatus(400);

@@ -12,9 +12,9 @@ export class UserService {
 
   async getUserInfomation(username) {
     const userInfoUrl = Constant.USER_INFO_URL.replace('{username}', username);
-    const headers = _genericHeaders(this.csrfToken, this.cookieStr);
-    const response = await axios.get(userInfoUrl, { headers });
     try {
+      const headers = _genericHeaders(this.csrfToken, this.cookieStr);
+      const response = await axios.get(userInfoUrl, { headers });
       if (response.status === 200) {
         const graphql = response.data.graphql;
         if (graphql && graphql.user) {
@@ -26,11 +26,12 @@ export class UserService {
           };
         }
       } else {
-        throw new ApiError(`${username}: Unable to get user infomation.`, response.status, response.data);
+        console.log(`Status ${response.status} when get user infomation from url: ${userInfoUrl}`);
       }
     } catch (error) {
-      throw new ApiError(`${username}: Unable to get user infomation.`, error.response.status, error.response.data);
+      console.log(`Status ${error.response.status}:${error.response.statusMessage} when get user infomation from url: ${userInfoUrl}`);
     }
+    return {};
   }
 
   async getMediasByDesiredCount(userId, desiredCount) {
@@ -38,10 +39,11 @@ export class UserService {
     const headers = _genericHeaders(this.csrfToken, this.cookieStr);
     var hasNext = true, next = '', fetchCount = 0;
     while (hasNext && fetchCount < desiredCount) {
-      const mediaQueryParams = _mediaQueryParams(userId, next);
+      const url = Constant.MEDIA_QUERY_URL + _mediaQueryParams(userId, next);
       try {
-        const response = await axios.get(Constant.MEDIA_QUERY_URL + mediaQueryParams, { headers });
+        const response = await axios.get(url, { headers });
         if (response.status !== 200) {
+          console.log(`Status ${response.status} when get user medias from url: ${url}`);
           return [];
         }
         const timelineMedia = response.data.data.user.edge_owner_to_timeline_media;
@@ -54,8 +56,7 @@ export class UserService {
           }
         }
       } catch (error) {
-        console.log(`${username}: Unable to get user infomation, return ${error.response.status}`);
-        console.log(error.response.data);
+        console.log(`Status ${error.response.status}:${error.response.statusMessage} when get user medias from url: ${url}`);
         return [];
       }
       hasNext = timelineMedia.page_info.has_next_page; 
