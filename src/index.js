@@ -30,13 +30,12 @@ app.post('/logout', async (req, res) => {
 
 app.post('/users/:username', async (req, res) => {
   const body = req.body;
-  console.log(JSON.stringify(req.body));
   if (body && body.csrfToken && body.requestCookie) {
     const userService = new UserService(body.csrfToken, body.requestCookie);
     const user = await userService.getUserInfomation(req.params.username);
     if (user.timeline_media_count && user.id) {
       const newMediaCount = MediaQueryHelper.calculateNewMediaCount(user.timeline_media_count, body.last_timeline_media_count);
-      userService.getMediasByDesiredCount(user.id, newMediaCount)
+      userService.getMediasByDesiredCount(user, newMediaCount)
         .then(data => res.json({ user, new_media_count: newMediaCount, data }))
         .catch(error => {
           if (error.response) {

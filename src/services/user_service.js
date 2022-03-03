@@ -35,7 +35,8 @@ export class UserService {
     return {};
   }
 
-  async getMediasByDesiredCount(userId, desiredCount) {
+  async getMediasByDesiredCount(user, desiredCount) {
+    const userId = user.id;
     const result = [];
     const headers = _genericHeaders(this.csrfToken, this.cookieStr);
     var hasNext = true, next = '', fetchCount = 0;
@@ -43,7 +44,7 @@ export class UserService {
       const url = Constant.MEDIA_QUERY_URL + _mediaQueryParams(userId, next);
       try {
         const response = await axios.get(url, { headers });
-        console.log(`Get user medias from ${url}`);
+        console.log(`${user.username}: Receive media response from ${url}`);
         if (response.status !== 200) {
           console.log(`Status ${response.status} when get user medias from url: ${url}`);
           return [];
@@ -57,12 +58,12 @@ export class UserService {
             return result;
           }
         }
+        hasNext = timelineMedia.page_info.has_next_page; 
+        next = timelineMedia.page_info.end_cursor;
       } catch (error) {
         console.log(`Status ${error.response.status}:${error.response.statusMessage} when get user medias from url: ${url}`);
         return [];
       }
-      hasNext = timelineMedia.page_info.has_next_page; 
-      next = timelineMedia.page_info.end_cursor;
     }
     return result;
   }
