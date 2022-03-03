@@ -11,6 +11,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get('/health', (req, res) => {
+  res.sendStatus(200);
+});
+
 app.post('/login', async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
@@ -35,8 +39,8 @@ app.post('/users/:username', async (req, res) => {
         .then(data => res.json({ user, new_media_count: newMediaCount, data }))
         .catch(error => res.status(error.status).json(error.json()));
     } catch (error) {
-      console.log(error.message);
-      res.status(error.status).json(error.json());
+      console.log(error);
+      res.sendStatus(500);
     }
   } else {
     res.sendStatus(400);
