@@ -37,7 +37,13 @@ app.post('/users/:username', async (req, res) => {
       const newMediaCount = MediaQueryHelper.calculateNewMediaCount(user.timeline_media_count, body.last_timeline_media_count);
       userService.getMediasByDesiredCount(user.id, newMediaCount)
         .then(data => res.json({ user, new_media_count: newMediaCount, data }))
-        .catch(error => res.status(error.status).json(error.json()));
+        .catch(error => {
+          if (error.response) {
+            res.status(error.response.status).send(error.response.data);
+          } else {
+            res.status(500).send(error.message);
+          }
+        });
     } else {
       res.status(500).send('Unable to get user fron Instagram, please check log for details.');
     }

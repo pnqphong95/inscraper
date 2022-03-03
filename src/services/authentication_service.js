@@ -20,6 +20,8 @@ export class IgAuthService {
         const csrfToken = CookieHelper.getCookieByName(authCookies, 'csrftoken');
         return {
           'userId': response.data.userId,
+          'username': credentials.username,
+          'active': true,
           'requestCookie': cookieString, 
           'csrfToken': csrfToken['value'],
           'expires': csrfToken['expires'],
