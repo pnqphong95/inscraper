@@ -60,7 +60,7 @@ app.post('/medias', async (req, res) => {
   if (body && body.csrfToken && body.requestCookie) {
     const mediaService = new MediaService(body.csrfToken, body.requestCookie);
     const result = await mediaService.viewMedias(shortcodes, timeout);
-    res.json({ user, remains: result.remains, data: result.data });
+    res.json({ user, remains: result.remains, data: result.data, error_remains: result.error_remains });
   } else {
     res.sendStatus(400);
   }

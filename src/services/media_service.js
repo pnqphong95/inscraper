@@ -10,7 +10,7 @@ export class MediaService {
   }
 
   async viewMedias(shortcodes, acceptTimeout) {
-    const result = { startTime: new Date(), data: {}, remains: [] };
+    const result = { startTime: new Date(), data: {}, remains: [], error_remains: [] };
     const headers = _genericHeaders(this.csrfToken, this.cookieStr);
     const viewMediaObjs = shortcodes.map(code => {
       return { code, url: Constant.VIEW_MEDIA_URL.replace('{code}', code) };
@@ -35,13 +35,13 @@ export class MediaService {
               result.data[childMedias[0].origin] = childMedias;
             }
           } else {
-            result.remains.push(workingObjs[i].code);
+            result.error_remains.push(workingObjs[i].code);
           }
         }
       } catch (error) {
         const codes = workingObjs.map(item => item.code);
         console.log(`Error when view media ${JSON.stringify(codes)}`, error);
-        result.remains = result.remains.concat(codes);
+        result.error_remains = result.error_remains.concat(codes);
       } finally {
         objProcesseds = objProcesseds.concat(workingObjs);
       }
