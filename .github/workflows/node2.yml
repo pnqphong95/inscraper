@@ -3,7 +3,7 @@ name: Deploy to inscraper-app-node2
 on:
   push:
     branches:
-      - master
+      - node2
 
 jobs:
   build:
