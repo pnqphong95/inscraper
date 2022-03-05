@@ -1,0 +1,20 @@
+name: Deploy to inscraper-app-node3
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: akhileshns/heroku-deploy@v3.12.12
+        with:
+          heroku_api_key: ${{secrets.HEROKU_API_KEY}}
+          heroku_app_name: ${{secrets.HEROKU_APP_NAME_NODE3}}
+          heroku_email: "phamphongbsn@outlook.com"
+        env:
+          HD_IG_USER: ${{secrets.IG_USER}}
+          HD_IG_PASS: ${{secrets.IG_PASS}}
