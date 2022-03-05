@@ -5,7 +5,8 @@ export function edgeToMedia(edge) {
     shortcode: edge.node.shortcode,
     taken_at_timestamp: edge.node.taken_at_timestamp,
     source: edge.node.display_url,
-    fulfilled_source: 'GraphImage' === edge.node.__typename
+    fulfilled_source: 'GraphImage' === edge.node.__typename,
+    classified: false
   };
 }
 
@@ -22,7 +23,8 @@ export function mediaView(viewData) {
           id: `${carousel[i].id}`, origin: `${parentId}`, type: 'GraphSidecar', shortcode: media.code,
           taken_at_timestamp: media.taken_at,
           source: carousel[i].image_versions2.candidates[0].url,
-          fulfilled_source: true
+          fulfilled_source: true,
+          classified: false
         });
       }
     } else if (video_versions && video_versions.length > 0) {
@@ -30,7 +32,8 @@ export function mediaView(viewData) {
         id: `${media.id}`, origin: `${parentId}`, type: 'GraphVideo', shortcode: media.code,
         taken_at_timestamp: media.taken_at,
         source: video_versions[0].url,
-        fulfilled_source: true
+        fulfilled_source: true,
+        classified: false
       });
     }
   }
