@@ -4,6 +4,7 @@ export function edgeToMedia(edge) {
     type: edge.node.__typename,
     shortcode: edge.node.shortcode,
     taken_at_timestamp: edge.node.taken_at_timestamp,
+    caption: edge.node.edge_media_to_caption.edges[0].node.text,
     source: edge.node.display_url,
     fulfilled_source: 'GraphImage' === edge.node.__typename,
     classified: false
@@ -22,6 +23,7 @@ export function mediaView(viewData) {
         result.push({
           id: `${carousel[i].id}`, origin: `${parentId}`, type: 'GraphSidecar', shortcode: media.code,
           taken_at_timestamp: media.taken_at,
+          caption: media.caption.text,
           source: carousel[i].image_versions2.candidates[0].url,
           fulfilled_source: true,
           classified: false
@@ -31,6 +33,7 @@ export function mediaView(viewData) {
       result.push({
         id: `${media.id}`, origin: `${parentId}`, type: 'GraphVideo', shortcode: media.code,
         taken_at_timestamp: media.taken_at,
+        caption: media.caption.text,
         source: video_versions[0].url,
         fulfilled_source: true,
         classified: false
