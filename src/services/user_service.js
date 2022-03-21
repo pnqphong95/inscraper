@@ -61,7 +61,12 @@ export class UserService {
         hasNext = timelineMedia.page_info.has_next_page; 
         next = timelineMedia.page_info.end_cursor;
       } catch (error) {
-        console.log(`Status ${error.response.status}:${error.response.statusMessage} when get user medias from url: ${url}`);
+        if (error.response) {
+          console.log(`Status ${error.response.status}:${error.response.statusMessage} when get user medias from url: ${url}`);
+        } else {
+          console.log(`Error when get user medias from url: ${url}`, error);
+        }
+
         return [];
       }
     }

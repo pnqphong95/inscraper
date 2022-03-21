@@ -1,10 +1,11 @@
 export function edgeToMedia(edge) {
+  const captionEdges = edge.node.edge_media_to_caption.edges;
   return {
     id: `${edge.node.id}`,
     type: edge.node.__typename,
     shortcode: edge.node.shortcode,
     taken_at_timestamp: edge.node.taken_at_timestamp,
-    caption: edge.node.edge_media_to_caption.edges[0].node.text,
+    caption: captionEdges && captionEdges.length > 0 ? captionEdges[0].node.text : '',
     source: edge.node.display_url,
     fulfilled_source: 'GraphImage' === edge.node.__typename,
     classified: false
