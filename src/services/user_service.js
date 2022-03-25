@@ -10,7 +10,7 @@ export class UserService {
     this.cookieStr = cookieStr;
   }
 
-  async getUserInfomation(username) {
+  async getUserInfomation(authUsername, username) {
     const userInfoUrl = Constant.USER_INFO_URL.replace('{username}', username);
     try {
       const headers = _genericHeaders(this.csrfToken, this.cookieStr);
@@ -20,8 +20,11 @@ export class UserService {
         const graphql = response.data.graphql;
         if (graphql && graphql.user) {
           return {
+            auth_username: authUsername,
             id: graphql.user.id,
             username: graphql.user.username,
+            is_private: graphql.user.is_private,
+            followed_by_auth_user: graphql.user.followed_by_viewer,
             name: graphql.user.full_name,
             timeline_media_count: graphql.user.edge_owner_to_timeline_media.count,
           };
@@ -38,6 +41,7 @@ export class UserService {
   async getMediasByDesiredCount(user, desiredCount) {
     const userId = user.id;
     const result = [];
+    if (!user.followed_by_auth_user && user.is_private) return result;
     const headers = _genericHeaders(this.csrfToken, this.cookieStr);
     var hasNext = true, next = '', fetchCount = 0;
     while (hasNext && fetchCount < desiredCount) {
