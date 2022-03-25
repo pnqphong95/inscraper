@@ -24,7 +24,7 @@ export function mediaView(viewData) {
         result.push({
           id: `${carousel[i].id}`, origin: `${parentId}`, type: 'GraphSidecar', shortcode: media.code,
           taken_at_timestamp: media.taken_at,
-          caption: media.caption.text,
+          caption: media.caption ? media.caption.text : '',
           source: carousel[i].image_versions2.candidates[0].url,
           fulfilled_source: true,
           classified: false
@@ -34,7 +34,7 @@ export function mediaView(viewData) {
       result.push({
         id: `${media.id}`, origin: `${parentId}`, type: 'GraphVideo', shortcode: media.code,
         taken_at_timestamp: media.taken_at,
-        caption: media.caption.text,
+        caption: media.caption ? media.caption.text : '',
         source: video_versions[0].url,
         fulfilled_source: true,
         classified: false
